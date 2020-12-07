@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Index</title>
+  <script src="{% static 'js/Chart.min.js' %}"></script>
+  <style>
+    .content{
+      width: 100%;
+      }
+    .chart__wrapper {
+      width: 50%;
+    }
+    #switch{
+        float: right;
+        width: 20%;
+        height:100px;
+        margin-right: 20%;
+        margin-top: 20%;
+    }
+  </style>
+</head>
+<body>
+<div class="content">
+    <button id="switch">Switch graphs</button>
+  <div class="chart__wrapper">
+    <canvas id="myChart" width="400" height="400"></canvas>
+  </div>
+
+    </div>
+  <script>
+    window.isGist = false;
+    function createChart(config) {
+      let ctx = document.getElementById('myChart').getContext('2d');
+      window.myLine = new Chart(ctx, config);
+    }
+
+    let config = {
+        type: window.isGist ? 'bar':'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Amount',
+                data: [],
+                backgroundColor: [
+                    'rgba(187,187,187,0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    };
+
+    window.onload =  async function() {
+        document.cookie='isGist='+window.isGist;
+        let data = await f ();
+        config.data.labels=[];
+        config.data.datasets[0].data=[];
+        for(let i=0;i<data.payinfos.length;i++){
+            config.data.labels.push(data.payinfos[i].date);
+            config.data.datasets[0].data.push(parseFloat(data.payinfos[i].amount));
+        }
+        createChart(config);
+		};
+
+    document.getElementById('switch').addEventListener('click', async () => {
+      if(window.myLine)
+        window.myLine.destroy();
+      window.isGist = !window.isGist;
+      document.cookie='isGist='+window.isGist;
+      config.type = window.isGist ? 'bar' : 'line';
+      let data=await f();
+      if(!window.isGist) {
+          config.data.labels = [];
+          config.data.datasets[0].data = [];
+          for (let i = 0; i < data.payinfos.length; i++) {
+              config.data.labels.push(data.payinfos[i].date);
+              config.data.datasets[0].data.push(parseFloat(data.payinfos[i].amount));
+          }
+      }
+      else{
+          config.data.labels = [];
+          config.data.datasets[0].data = [];
+          for (let i = 0; i < data.clients_and_amount.length; i++) {
+              config.data.labels.push(data.clients_and_amount[i].client);
+              config.data.datasets[0].data.push(parseFloat(data.clients_and_amount[i].amount));
+          }
+      }
+      createChart(config);
+
+    });
+
+    async function f() {
+    const data = await fetch("{% url 'charts' %}",
+    {method:'GET',
+    headers: {'Accept': 'application/json, text/plain, */*',
+    'Content-Type': 'application/json'},
+     }).then(result=>result.json());
+    return data;
+    }
+  </script>
+</body>
+</html>
+
